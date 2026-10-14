@@ -1,3 +1,9 @@
+"""
+Homepage (/): medal world map, medal leaderboard and per-country medal winners.
+
+@author: Chris Ellis
+"""
+
 import dash
 from dash import html, dcc, dash_table, Input, Output, State, callback, no_update, ctx, Patch
 import plotly.express as px
@@ -86,8 +92,8 @@ medals_map_fig.add_trace(go.Choropleth(
 
 medals_choropleth_layout = html.Div(
     [
-        html.H2("Olympic Medals — World Map", className="page-title"),
-        dcc.Graph(id="medals-choropleth", figure=medals_map_fig, className="graph"),
+        html.H2("Olympic Medals — World Map", style={"textAlign": "center"}),
+        dcc.Graph(id="medals-choropleth", figure=medals_map_fig),
     ]
 )
 
@@ -113,14 +119,14 @@ LEADERS_PAGE_SIZE = 15
 
 medal_leaders_table = html.Div(
     [
-        html.H2("Medal Leaders", className="page-title page-title--spaced"),
+        html.H2("Medal Leaders", style={"textAlign": "center", "marginTop": "20px"}),
         html.P(
             "Click a country row below, click a country on the map above, "
             "or use the search box further down, to see its individual "
             "medal winners.",
-            className="note",
+            style={"textAlign": "center", "color": "#555", "fontStyle": "italic"},
         ),
-        html.Div(dash_table.DataTable(
+        dash_table.DataTable(
             id="medal-leaders-table",
             columns=[{"name": col, "id": col} for col in leaders_df.columns],
             # "id" is not a displayed column; it lets active_cell report which
@@ -132,9 +138,13 @@ medal_leaders_table = html.Div(
             page_action="native",
             page_current=0,
             page_size=LEADERS_PAGE_SIZE,
-            # Width, header colours, cell padding and alignment come from
-            # assets/olympics_theme.css (.table-wrap). Only the data-driven
-            # row rules below stay in Python.
+            style_table={"overflowX": "auto", "width": "80%", "margin": "0 auto"},
+            style_cell={"textAlign": "center", "padding": "6px"},
+            style_header={
+                "backgroundColor": "#0055A4",
+                "color": "white",
+                "fontWeight": "bold",
+            },
             style_data_conditional=list(LEADERS_TABLE_BASE_STYLE),
             # active_cell is used purely as an input signal — to detect
             # which row was clicked (see select_country_from_table_or_map)
@@ -147,9 +157,9 @@ medal_leaders_table = html.Div(
             # driven by the real selection state rather than active_cell,
             # so DataTable's own default active-cell affordance is left
             # alone here rather than fought.
-        ), className="table-wrap table-wrap--clickable"),
+        ),
     ],
-    className="section",
+    style={"marginBottom": "30px"},
 )
 
 # ---------------------------------------------------------------
@@ -157,7 +167,7 @@ medal_leaders_table = html.Div(
 # ---------------------------------------------------------------
 country_winners_section = html.Div(
     [
-        html.H2("Medal Winners by Country", className="page-title page-title--spaced"),
+        html.H2("Medal Winners by Country", style={"textAlign": "center", "marginTop": "20px"}),
 
         html.Div(
             dcc.Dropdown(
@@ -168,21 +178,21 @@ country_winners_section = html.Div(
                 searchable=True,
                 clearable=True,
             ),
-            className="dropdown-wrap",
+            style={"width": "400px", "margin": "0 auto 20px auto"},
         ),
 
         html.H3(
             id="country-winners-title",
             children="Select a country to view its medal winners",
-            className="section-subtitle section-subtitle--muted",
+            style={"textAlign": "center", "color": "#555"},
         ),
         html.P(
             "Click any row to open that athlete's profile (or the team's profile "
             "for team events) on the Olympic Athlete Search page.",
-            className="note",
+            style={"textAlign": "center", "color": "#555", "fontStyle": "italic"},
         ),
 
-        html.Div(dash_table.DataTable(
+        dash_table.DataTable(
             id="country-winners-table",
             columns=[
                 {"name": "Name", "id": "name"},
@@ -196,17 +206,23 @@ country_winners_section = html.Div(
             sort_action="native",
             filter_action="native",
             page_size=15,
-            # Width, header, padding, alignment and the pointer cursor come
-            # from assets/olympics_theme.css (.table-wrap--clickable).
+            style_table={"overflowX": "auto", "width": "80%", "margin": "0 auto"},
+            style_cell={"textAlign": "center", "padding": "6px"},
+            style_header={
+                "backgroundColor": "#0055A4",
+                "color": "white",
+                "fontWeight": "bold",
+            },
+            style_data={"cursor": "pointer"},
             style_data_conditional=[
                 {
                     "if": {"row_index": "odd"},
                     "backgroundColor": "#f5f5f5",
                 }
             ],
-        ), className="table-wrap table-wrap--clickable"),
+        ),
     ],
-    className="section",
+    style={"marginBottom": "30px"},
 )
 
 # ---------------------------------------------------------------

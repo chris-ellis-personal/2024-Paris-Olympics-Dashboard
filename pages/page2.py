@@ -2,7 +2,7 @@
 """
 Created on Fri Sep 11 11:53:31 2026
 
-@author: 20167561
+@author: Chris Ellis
 """
 
 import ast
@@ -461,15 +461,21 @@ def build_summary_rows(athlete):
 # ---------------------------------------------------------------
 # Shared rendering helpers (used by both the athlete and team views)
 # ---------------------------------------------------------------
-# (Table header colours now come from assets/olympics_theme.css.)
+_HEADER_STYLE = {"backgroundColor": "#0055A4", "color": "white", "fontWeight": "bold"}
 
 
 def _note(text):
-    return html.P(text, className="note note--compact")
+    return html.P(
+        text,
+        style={
+            "textAlign": "center", "color": "#555", "fontStyle": "italic",
+            "marginBottom": "12px",
+        },
+    )
 
 
 def _medals_table(medal_rows):
-    return html.Div(dash_table.DataTable(
+    return dash_table.DataTable(
         columns=[
             {"name": "Discipline", "id": "discipline"},
             {"name": "Event", "id": "event"},
@@ -478,13 +484,15 @@ def _medals_table(medal_rows):
         ],
         data=medal_rows[["discipline", "event", "medal_type", "medal_date"]]
             .sort_values("medal_date").to_dict("records"),
-        # Gold/silver/bronze row colours depend on the data, so they stay here.
+        style_table={"overflowX": "auto", "width": "90%", "margin": "0 auto"},
+        style_cell={"textAlign": "center", "padding": "6px"},
+        style_header=_HEADER_STYLE,
         style_data_conditional=[
             {"if": {"filter_query": '{medal_type} = "Gold Medal"'}, "backgroundColor": "#FFF3CD"},
             {"if": {"filter_query": '{medal_type} = "Silver Medal"'}, "backgroundColor": "#F1F1F1"},
             {"if": {"filter_query": '{medal_type} = "Bronze Medal"'}, "backgroundColor": "#FBE4D5"},
         ],
-    ), className="table-wrap")
+    )
 
 
 def _events_table(event_rows):
@@ -499,36 +507,54 @@ def _events_table(event_rows):
     if "date" in display_df.columns:
         display_df["date"] = display_df["date"].dt.strftime("%d %b %Y")
 
-    return html.Div(dash_table.DataTable(
+    return dash_table.DataTable(
         columns=[{"name": label, "id": col} for col, label in available_cols],
         data=display_df.to_dict("records"),
+        style_table={"overflowX": "auto", "width": "95%", "margin": "0 auto"},
+        style_cell={"textAlign": "center", "padding": "6px"},
+        style_header=_HEADER_STYLE,
         style_data_conditional=[
             {"if": {"row_index": "odd"}, "backgroundColor": "#f5f5f5"},
         ],
-    ), className="table-wrap")
+    )
 
 
 def _summary_card(title, rows, side_element):
     """Title + label/value table on the left, photo or badge on the right.
-    CSS Grid (not flex, see .summary-card in the theme) keeps the right-hand
-    column fixed however long the text gets."""
+    CSS Grid (not flex) keeps the right-hand column fixed however long the
+    text gets."""
     info_column = html.Div(
         [
-            html.H3(title, className="summary-card__title"),
+            html.H3(title, style={"textAlign": "left", "marginBottom": "15px"}),
             html.Table(
                 [
                     html.Tr([
-                        html.Td(label, className="summary-table__label"),
-                        html.Td(str(value), className="summary-table__value"),
+                        html.Td(label, style={
+                            "fontWeight": "bold", "padding": "6px 12px 6px 0",
+                            "verticalAlign": "top", "whiteSpace": "nowrap",
+                            "textAlign": "left", "color": "#0055A4",
+                        }),
+                        html.Td(str(value), style={
+                            "padding": "6px 12px", "textAlign": "left",
+                            "wordBreak": "break-word",
+                        }),
                     ])
                     for label, value in rows
                 ],
-                className="summary-table",
+                style={"margin": "0", "width": "100%", "tableLayout": "fixed"},
             ),
         ],
-        className="summary-card__info",
+        style={"minWidth": "0"},
     )
-    return html.Div([info_column, side_element], className="summary-card")
+    return html.Div(
+        [info_column, side_element],
+        style={
+            "display": "grid", "gridTemplateColumns": "1fr 220px",
+            "alignItems": "center", "gap": "30px",
+            "border": "1px solid #ddd", "borderRadius": "8px",
+            "padding": "20px", "backgroundColor": "#f9f9f9",
+        },
+    )
 
 
 def find_team_roster(info):
@@ -560,11 +586,16 @@ def build_team_profile(code):
         [
             html.Div(
                 info["country_code"] or get_initials(name),
-                className="profile-badge__code",
+                style={"fontSize": "56px", "fontWeight": "bold", "lineHeight": "1"},
             ),
-            html.Div("TEAM", className="profile-badge__label"),
+            html.Div("TEAM", style={"fontSize": "14px", "letterSpacing": "4px", "marginTop": "10px"}),
         ],
-        className="profile-badge profile-badge--team",
+        style={
+            "width": "220px", "height": "260px", "borderRadius": "8px",
+            "backgroundColor": "#0055A4", "color": "white", "display": "flex",
+            "flexDirection": "column", "alignItems": "center",
+            "justifyContent": "center",
+        },
     )
     rows = [
         ("Type", "Team"),
@@ -579,7 +610,7 @@ def build_team_profile(code):
     if team_medals.empty:
         medals_content = html.P(
             f"{name} did not win a medal at the Paris 2024 Olympics.",
-            className="empty-message",
+            style={"textAlign": "center", "color": "#555"},
         )
     else:
         medals_content = _medals_table(team_medals)
@@ -588,17 +619,17 @@ def build_team_profile(code):
     if team_events.empty:
         events_content = html.P(
             "No event-by-event results were found for this team in the results data.",
-            className="empty-message",
+            style={"textAlign": "center", "color": "#555"},
         )
     else:
         events_content = _events_table(team_events)
 
     if roster_df.empty:
         roster_content = html.Div([
-            html.H3("Team Members", className="section-subtitle"),
+            html.H3("Team Members", style={"textAlign": "center"}),
             html.P(
                 "No registered athletes could be matched to this team.",
-                className="empty-message",
+                style={"textAlign": "center", "color": "#555"},
             ),
         ])
     else:
@@ -617,9 +648,9 @@ def build_team_profile(code):
             for _, r in roster_df.sort_values("name").iterrows()
         ]
         roster_content = html.Div([
-            html.H3(f"Team Members ({len(roster_records)})", className="section-subtitle"),
+            html.H3(f"Team Members ({len(roster_records)})", style={"textAlign": "center"}),
             _note(intro + "Click a team member to open their profile."),
-            html.Div(dash_table.DataTable(
+            dash_table.DataTable(
                 id="team-roster-table",
                 columns=[
                     {"name": "Name", "id": "name"},
@@ -628,10 +659,14 @@ def build_team_profile(code):
                 ],
                 data=roster_records,
                 page_size=15,
+                style_table={"overflowX": "auto", "width": "95%", "margin": "0 auto"},
+                style_cell={"textAlign": "center", "padding": "6px"},
+                style_header=_HEADER_STYLE,
+                style_data={"cursor": "pointer"},
                 style_data_conditional=[
                     {"if": {"row_index": "odd"}, "backgroundColor": "#f5f5f5"},
                 ],
-            ), className="table-wrap table-wrap--clickable"),
+            ),
         ])
 
     return summary_card, medals_content, events_content, roster_content
@@ -648,12 +683,12 @@ def layout(code=None, **other_query_strings):
 
     return html.Div(
         [
-            html.H2("Olympic Athlete Search", className="page-title"),
+            html.H2("Olympic Athlete Search", style={"textAlign": "center"}),
             html.P(
                 "Search for an athlete or team to see a brief synopsis, whether "
                 "they won a medal at the Paris 2024 Olympics, and every event "
                 "they competed in during the Games.",
-                className="note",
+                style={"textAlign": "center", "color": "#555", "fontStyle": "italic"},
             ),
 
             html.Div(
@@ -665,31 +700,31 @@ def layout(code=None, **other_query_strings):
                     searchable=True,
                     clearable=True,
                 ),
-                className="dropdown-wrap dropdown-wrap--wide",
+                style={"width": "450px", "margin": "0 auto 30px auto"},
             ),
 
             html.Div(id="athlete-summary-card"),
 
             html.Div(
                 [
-                    html.H3("Medals at Paris 2024", className="section-subtitle"),
+                    html.H3("Medals at Paris 2024", style={"textAlign": "center"}),
                     html.Div(id="athlete-medals-content"),
                 ],
-                className="section section--top-gap",
+                style={"marginTop": "20px", "marginBottom": "30px"},
             ),
 
             html.Div(
                 [
-                    html.H3("Events Competed In", className="section-subtitle"),
+                    html.H3("Events Competed In", style={"textAlign": "center"}),
                     html.Div(id="athlete-events-content"),
                 ],
-                className="section",
+                style={"marginBottom": "30px"},
             ),
 
             # Only filled in for teams (heading and table are built in the callback)
-            html.Div(id="team-roster-content", className="section"),
+            html.Div(id="team-roster-content", style={"marginBottom": "30px"}),
         ],
-        className="athlete-page",
+        style={"maxWidth": "1000px", "margin": "0 auto", "padding": "0 20px"},
     )
 
 
@@ -707,7 +742,7 @@ def update_athlete_details(selected_code):
     if not selected_code:
         placeholder = html.P(
             "Select an athlete or team above to get started.",
-            className="empty-message empty-message--faint",
+            style={"textAlign": "center", "color": "#999"},
         )
         return placeholder, "", "", ""
 
@@ -719,7 +754,7 @@ def update_athlete_details(selected_code):
 
     athlete_rows = athletes_df[athletes_df["code"] == selected_code]
     if athlete_rows.empty:
-        return html.P("Athlete not found.", className="text-center"), "", "", ""
+        return html.P("Athlete not found.", style={"textAlign": "center"}), "", "", ""
     athlete = athlete_rows.iloc[0]
     selected_name = athlete["name"]
 
@@ -728,17 +763,32 @@ def update_athlete_details(selected_code):
     if photo_url:
         photo_el = html.Div(
             [
-                html.Img(src=photo_url, className="athlete-photo"),
+                html.Img(
+                    src=photo_url,
+                    style={
+                        "width": "220px", "height": "260px", "objectFit": "cover",
+                        "objectPosition": "center 15%",
+                        "borderRadius": "8px", "border": "3px solid #0055A4",
+                        "display": "block",
+                    },
+                ),
                 html.A(
                     "Photo via Wikimedia Commons", href=photo_url, target="_blank",
-                    className="athlete-photo__credit",
+                    style={"display": "block", "textAlign": "center", "fontSize": "11px",
+                           "color": "#999", "marginTop": "6px"},
                 ),
-            ]
+            ],
+            style={},
         )
     else:
         photo_el = html.Div(
             get_initials(selected_name),
-            className="profile-badge profile-badge--initials",
+            style={
+                "width": "220px", "height": "260px", "borderRadius": "8px",
+                "backgroundColor": "#0055A4", "color": "white", "fontSize": "48px",
+                "fontWeight": "bold", "display": "flex", "alignItems": "center",
+                "justifyContent": "center",
+            },
         )
 
     summary_card = _summary_card(selected_name, build_summary_rows(athlete), photo_el)
@@ -757,7 +807,7 @@ def update_athlete_details(selected_code):
     if athlete_medals.empty:
         medals_content = html.P(
             f"{selected_name} did not win a medal at the Paris 2024 Olympics.",
-            className="empty-message",
+            style={"textAlign": "center", "color": "#555"},
         )
     elif showing_team_medals:
         medals_content = html.Div([
@@ -786,7 +836,7 @@ def update_athlete_details(selected_code):
         events_content = html.P(
             "No event-by-event results were found for this athlete in the "
             "results data.",
-            className="empty-message",
+            style={"textAlign": "center", "color": "#555"},
         )
     elif showing_team_results:
         events_content = html.Div([

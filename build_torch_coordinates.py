@@ -5,6 +5,8 @@ caused by the TAFE network blocking access to nominatim.openstreetmap.org.
 
 Run this once from your project root:
     python build_torch_coordinates.py
+
+@author: Chris Ellis
 """
 
 import pandas as pd

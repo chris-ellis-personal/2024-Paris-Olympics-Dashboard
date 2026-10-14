@@ -1,3 +1,9 @@
+"""
+Olympic Torch Path (/torch-path): torch relay route map.
+
+@author: Chris Ellis
+"""
+
 import dash
 from dash import Dash, html, dcc
 import plotly.graph_objects as go
@@ -67,8 +73,6 @@ torch_map_fig.update_layout(
     title="Paris 2024 Olympic Torch Relay Route",
     geo=dict(
         scope="world",
-        projection_type="equirectangular",
-        resolution=110,          # coarsest (fastest) coastline detail
         showframe=False,
         showcoastlines=True,
         landcolor="#f0f0f0",
@@ -76,25 +80,26 @@ torch_map_fig.update_layout(
     ),
     margin=dict(l=0, r=0, t=50, b=0),
     autosize=True,
-    dragmode="pan",
-    # Keeps the user's current zoom/pan if Dash ever re-sends the figure.
-    uirevision="torch-route",
 )
 
-# Sizing lives in assets/olympics_theme.css (.graph / .graph--tall = 85% of
-# the window height). The map fills the content area rather than the browser
-# viewport, so it never slides underneath the sidebar from app.py.
+# NOTE: this used to break out to a fixed 100vw width (via
+# position: relative; left: 50%; margin-left/-right: -50vw) so the map
+# would span the entire browser viewport regardless of its parent. Now
+# that app.py wraps every page in a permanent left-hand sidebar, that
+# viewport-relative trick has no way of knowing the sidebar exists, so it
+# was overlapping it. Filling 100% of the actual content area (which
+# app.py already gives a margin from the sidebar) is what we want instead.
 torch_route_layout = html.Div(
     [
-        html.H2("Olympic Torch Relay Path", className="page-title"),
+        html.H2("Olympic Torch Relay Path", style={"textAlign": "center"}),
         dcc.Graph(
             id="torch-route-map",
             figure=torch_map_fig,
-            className="graph graph--tall",
-            config={"responsive": True, "scrollZoom": True, "displaylogo": False},
+            style={"width": "100%", "height": "85vh"},
+            config={"responsive": True},
         ),
     ],
-    className="torch-page",
+    style={"width": "100%"},
 )
 
 # ---------------------------------------------------------------
